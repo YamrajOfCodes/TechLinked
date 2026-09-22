@@ -12,7 +12,10 @@ import {
   acceptProjectApplication,
   rejectProjectApplication,
   withdrawApplication,
-  removeFromProject
+  removeFromProject,
+  createProject,
+  updateProjectImage,
+  completeProject
 } from "../../API/User/Project/project.api";
 import toast from "react-hot-toast";
 
@@ -29,6 +32,34 @@ export const projectKeys = {
     [...projectKeys.all, "applications", id] as const,
 };
 
+
+export const useCreateProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createProject,
+
+    onSuccess: () => {
+      // Refresh project list
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["me"],
+      });
+
+      toast.success("Project created successfully");
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to create project"
+      );
+    },
+  });
+};
 
 export const useProjects = () => {
   return useQuery({
@@ -100,6 +131,8 @@ export const useAcceptApplication = () => {
           variables.projectId
         ),
       });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+
 
       queryClient.invalidateQueries({
         queryKey: projectKeys.applications(
@@ -176,6 +209,8 @@ export const useRemoveFromProject = () => {
         queryKey: projectKeys.detail(variables.projectId),
       });
 
+    queryClient.invalidateQueries({ queryKey: ["me"] });
+
       queryClient.invalidateQueries({
         queryKey: projectKeys.applications(
           variables.projectId
@@ -194,6 +229,48 @@ export const useRemoveFromProject = () => {
         error?.response?.data?.message ||
           "Failed to remove member"
       );
+    },
+  });
+};
+
+
+export const useUpdateProjectImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateProjectImage,
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(
+          variables.projectId
+        ),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
+    },
+  });
+};
+
+
+export const useCompleteProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: completeProject,
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(
+          variables.projectId
+        ),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
     },
   });
 };

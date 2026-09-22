@@ -89,7 +89,6 @@ export const createProject = async (data: {
   githubUrl?: string;
 }) => {
   const res = await api.post("/projects", data);
-
   return res.data.data;
 };
 
@@ -170,4 +169,35 @@ export const removeFromProject = async (
     `/projects/${projectId}/members/${memberId}`
   );
   return res.data.data;
+};
+
+export const updateProjectImage = async ({
+  projectId,
+  image,
+}: {
+  projectId: string;
+  image: File;
+}) => {
+  const formData = new FormData();
+
+  formData.append("image", image);
+
+  const response = await api.patch(
+    `/projects/${projectId}/image`,
+    formData
+  );
+
+  return response.data;
+};
+
+export const completeProject = async ({
+  projectId,
+}: {
+  projectId: string;
+}) => {
+  const response = await api.patch(
+    `/projects/${projectId}/complete`
+  );
+
+  return response.data;
 };

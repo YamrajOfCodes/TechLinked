@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { jwtDecode } from "jwt-decode";
@@ -13,7 +13,8 @@ import {
   resendOtp,
   registerUser,
   sendOtp,
- verifyOtp
+ verifyOtp,
+ getMe
 } from "@/src/API/User/Auth/authAPI";
 
 interface JwtPayload {
@@ -146,6 +147,15 @@ export const useResendOtp = () => {
     onError: () => {
       toast.error("Couldn't resend the code. Please try again.");
     },
+  });
+};
+
+
+export const useMe = () => {
+  return useQuery({
+    queryKey: ["me","posts"],
+    queryFn: getMe,
+    enabled: !!tokenStore.get(),
   });
 };
 

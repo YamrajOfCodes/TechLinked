@@ -56,6 +56,17 @@ export const createPost = async (req, res, next) => {
       },
     });
 
+    await prisma.user.update({
+      where:{
+        id:userId
+      },
+      data:{
+        impact:{
+            increment: 10,
+        }
+      }
+    })
+
     return res.status(201).json({
       success: true,
       message: "Post created successfully",
@@ -352,6 +363,31 @@ export const deletePost = async (req, res, next) => {
         id,
       },
     });
+
+    const user = await prisma.user.findUnique({
+      where:{
+        id:userId
+      },
+      select:{
+        impact:true
+      }
+    });
+
+    if(user.impact > 0){
+      await prisma.user.update({
+        where:{
+        id:userId
+        },
+        data:{
+         impact:{
+           decrement:10
+        }
+      }
+    })
+
+    }
+
+  
 
     return res.status(200).json({
       success: true,

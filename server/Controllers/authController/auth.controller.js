@@ -199,6 +199,54 @@ export const sendOtp = async (req, res, next) => {
 };
 
 
+export const getMe = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        FirstName: true,
+        LastName: true,
+        email: true,
+        phone: true,
+        phoneVerified: true,
+        bio: true,
+        profilePhoto: true,
+        resumeUrl: true,
+        education: true,
+        gender: true,
+        githubUrl: true,
+        linkedinUrl: true,
+        location: true,
+        portfolioUrl: true,
+        skills: true,
+        createdAt: true,
+        impact:true,
+        posts:true
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 export const verifyOtp = async (req, res, next) => {
   try {
     const { token, otp } = req.body;

@@ -1,6 +1,7 @@
 import express from "express";
 
 import {
+  getMe,
   login,
   logout,
   refreshAccessToken,
@@ -15,6 +16,9 @@ import {
   otpVerifyLimiter,
   refreshLimiter,
 } from "../../Middleware/Auth/rateLimit.middleware.js";
+
+
+import { authenticate } from "../../Middleware/Auth/auth.middleware.js";
 
 const router = express.Router();
 
@@ -184,6 +188,8 @@ router.post("/login", loginLimiter, login);
  *         description: Too many refresh requests
  */
 router.post("/refresh", refreshLimiter, refreshAccessToken);
+
+router.get("/me", authenticate, getMe);
 
 /**
  * @swagger

@@ -13,10 +13,12 @@ import {
   leaveProject,
   completeProject,
   cancelProject,
+  updateProjectImage,
 } from "../../Controllers/projectController/proectController.js";
 
 import { authenticate } from "../../Middleware/Auth/auth.middleware.js";
 import { optionalAuthenticate } from "../../Middleware/Auth/optionalAuthenticate.js";
+import upload from "../../Middleware/upload.js";
 
 const router = express.Router();
 
@@ -75,6 +77,13 @@ router.delete(
   "/:projectId/applications/me",
   authenticate,
   withdrawApplication
+);
+
+router.patch(
+  "/:projectId/image",
+  authenticate,
+  upload.single("image"),
+  updateProjectImage
 );
 
 

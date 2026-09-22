@@ -1,15 +1,7 @@
 "use client";
 import GuestGateModal from "@/src/components/auth/GuestGateModal";
-import NavBar from "@/src/components/Common/NavBar";
-import ActivityCard from "@/src/components/homePage/ActivityCard/ActivityCard";
-import Avatar from "@/src/components/homePage/Avatar/Avatar";
-import ComposerButton from "@/src/components/homePage/ComposerButton/ComposerButton";
-import ExploreItem from "@/src/components/homePage/ExploreItem/ExploreItem";
-import OpportunityCard from "@/src/components/homePage/OpportunityCard/OpportunityCard";
-import PostCard from "@/src/components/homePage/PostCard/PostCard";
-import SectionHeader from "@/src/components/homePage/SectionHeader/SectionHeader";
 import HomePageLayout from "@/src/components/User/Homepage/HomePageLayout";
-import TweetCard from "@/src/components/User/Post/TweetCard";
+import { useMe } from "@/src/hooks/auth/authHooks";
 import { useGetPosts, useHandleLike } from "@/src/hooks/post/postHooks";
 import { tokenStore } from "@/src/lib/auth/tokenStore";
 import { useQuery } from "@tanstack/react-query";
@@ -122,13 +114,13 @@ interface JwtPayload {
 
 export default function HomePage() {
 
-  const {mutate:handlelike,isPending:ispendingLike} = useHandleLike();
-const { data: posts, isLoading:postLoading, isError } = useGetPosts()
+const {mutate:handlelike,isPending:ispendingLike} = useHandleLike();
+const { data: posts, isLoading:postLoading, isError } = useGetPosts();
+const { data, isLoading } = useMe();
 const [currentUserId, setCurrentUserId] = useState("");
  const [showGate, setShowGate] = useState(false);
  const [gateAction, setGateAction] = useState<"like" | "comment" | "post" | "connect">("post");
  const router = useRouter();
-
 
 useEffect(() => {
   const token = tokenStore.get()
@@ -180,7 +172,7 @@ console.log("posts",posts)
       opportunities={opportunities}
       skills={skills}
       stories={stories}
-      user={user}
+      user={data?.data}
       posts={posts}
       formatTime={formatTime}
       currentUserId={currentUserId}

@@ -138,8 +138,10 @@ export default function ProjectsPage() {
 
       {
         createProjectModal && (
-          <div className="h-screen w-full fixed top-0 left-0 bg-black/30" onClick={()=>{setCreateProjectModal(false)}}>
-            <CreateProjectPage/>
+          <div className="h-screen w-full fixed top-0 bg-black/30" onClick={()=>{setCreateProjectModal(false)}}>
+            <div>
+              <CreateProjectPage/>
+            </div>
           </div>
         )
       }

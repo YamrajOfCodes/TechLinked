@@ -33,6 +33,7 @@ model User {
   portfolioUrl String?
   profilePhoto String?
   resumeUrl    String?
+  impact       Int      @default(0)
 
   // Posts
   posts     Post[]

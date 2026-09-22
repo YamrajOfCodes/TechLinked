@@ -1,4 +1,5 @@
 import prisma from "../../Database/prisma.js";
+import cloudinary from "../../config/cloudinary.js";
 
 export const createProject = async (req, res, next) => {
   try {
@@ -54,6 +55,17 @@ export const createProject = async (req, res, next) => {
         },
       },
     });
+
+    await prisma.user.update({
+      where:{
+        id:userId
+      },
+      data:{
+        impact:{
+          increment:40
+        }
+      }
+    })
 
     return res.status(201).json({
       success: true,
@@ -540,195 +552,152 @@ export const getProjectApplications = async (
 };
 
 
-export const acceptApplication = async (
-  req,
-  res,
-  next
-) => {
+export const acceptApplication = async (req, res) => {
   try {
     const ownerId = req.user.userId;
 
-    const {
-      projectId,
-      applicationId,
-    } = req.params;
+    const { projectId, applicationId } = req.params;
 
-    const result = await prisma.$transaction(
-      async (tx) => {
-        const project = await tx.project.findUnique({
+    const result = await prisma.$transaction(async (tx) => {
+      const project = await tx.project.findUnique({
+        where: {
+          id: projectId,
+        },
+      });
+
+      if (!project) {
+        const error = new Error("PROJECT_NOT_FOUND");
+        error.statusCode = 404;
+        throw error;
+      }
+
+
+      if (project.ownerId !== ownerId) {
+        const error = new Error("NOT_PROJECT_OWNER");
+        error.statusCode = 403;
+        throw error;
+      }
+
+
+
+      if (project.status !== "OPEN") {
+        const error = new Error("PROJECT_NOT_OPEN");
+        error.statusCode = 400;
+        throw error;
+      }
+
+
+      const application = await tx.projectApplication.findUnique({
+        where: {
+          id: applicationId,
+        },
+      });
+
+      if (!application) {
+        const error = new Error("APPLICATION_NOT_FOUND");
+        error.statusCode = 404;
+        throw error;
+      }
+
+
+      if (application.projectId !== projectId) {
+        const error = new Error("INVALID_APPLICATION");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (application.status !== "PENDING") {
+        const error = new Error("APPLICATION_ALREADY_PROCESSED");
+        error.statusCode = 400;
+        throw error;
+      }
+
+
+      const existingMember = await tx.projectMember.findUnique({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId: application.applicantId,
+          },
+        },
+      });
+
+      if (existingMember) {
+        const error = new Error("USER_ALREADY_MEMBER");
+        error.statusCode = 400;
+        throw error;
+      }
+
+
+      const memberCount = await tx.projectMember.count({
+        where: {
+          projectId,
+        },
+      });
+
+      if (memberCount >= project.requiredMembers) {
+        const error = new Error("PROJECT_FULL");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      await tx.user.update({
+        where: {
+          id: application.applicantId,
+        },
+        data: {
+          impact: {
+            increment: 40,
+          },
+        },
+      });
+
+
+      await tx.projectApplication.update({
+        where: {
+          id: applicationId,
+        },
+        data: {
+          status: "ACCEPTED",
+        },
+      });
+
+
+      const member = await tx.projectMember.create({
+        data: {
+          projectId,
+          userId: application.applicantId,
+        },
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              FirstName: true,
+              LastName: true,
+              profilePhoto: true,
+            },
+          },
+        },
+      });
+
+  
+
+      const newMemberCount = memberCount + 1;
+
+      if (newMemberCount >= project.requiredMembers) {
+        await tx.project.update({
           where: {
             id: projectId,
           },
-        });
-
-        if (!project) {
-          const error = new Error(
-            "PROJECT_NOT_FOUND"
-          );
-
-          error.statusCode = 404;
-
-          throw error;
-        }
-
-        if (project.ownerId !== ownerId) {
-          const error = new Error(
-            "NOT_PROJECT_OWNER"
-          );
-
-          error.statusCode = 403;
-
-          throw error;
-        }
-
-        if (project.status !== "OPEN") {
-          const error = new Error(
-            "PROJECT_NOT_OPEN"
-          );
-
-          error.statusCode = 400;
-
-          throw error;
-        }
-
-        const application =
-          await tx.projectApplication.findUnique({
-            where: {
-              id: applicationId,
-            },
-          });
-
-        if (!application) {
-          const error = new Error(
-            "APPLICATION_NOT_FOUND"
-          );
-
-          error.statusCode = 404;
-
-          throw error;
-        }
-
-        if (application.projectId !== projectId) {
-          const error = new Error(
-            "INVALID_APPLICATION"
-          );
-
-          error.statusCode = 400;
-
-          throw error;
-        }
-
-        if (application.status !== "PENDING") {
-          const error = new Error(
-            "APPLICATION_ALREADY_PROCESSED"
-          );
-
-          error.statusCode = 400;
-
-          throw error;
-        }
-
-        /*
-         * Make sure applicant hasn't already joined.
-         */
-        const existingMember =
-          await tx.projectMember.findUnique({
-            where: {
-              projectId_userId: {
-                projectId,
-                userId: application.applicantId,
-              },
-            },
-          });
-
-        if (existingMember) {
-          const error = new Error(
-            "USER_ALREADY_MEMBER"
-          );
-
-          error.statusCode = 400;
-
-          throw error;
-        }
-
-        const memberCount =
-          await tx.projectMember.count({
-            where: {
-              projectId,
-            },
-          });
-
-        if (
-          memberCount >= project.requiredMembers
-        ) {
-          const error = new Error(
-            "PROJECT_FULL"
-          );
-
-          error.statusCode = 400;
-
-          throw error;
-        }
-
-        /*
-         * Accept application.
-         */
-        await tx.projectApplication.update({
-          where: {
-            id: applicationId,
-          },
-
           data: {
-            status: "ACCEPTED",
+            status: "FULL",
           },
         });
-
-        /*
-         * Create project member.
-         */
-        const member =
-          await tx.projectMember.create({
-            data: {
-              projectId,
-              userId: application.applicantId,
-            },
-
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  FirstName: true,
-                  LastName: true,
-                  profilePhoto: true,
-                },
-              },
-            },
-          });
-
-        const newMemberCount =
-          memberCount + 1;
-
-        /*
-         * Mark project FULL when capacity is reached.
-         */
-        if (
-          newMemberCount >=
-          project.requiredMembers
-        ) {
-          await tx.project.update({
-            where: {
-              id: projectId,
-            },
-
-            data: {
-              status: "FULL",
-            },
-          });
-        }
-
-        return member;
       }
-    );
+
+      return member;
+    });
 
     return res.status(200).json({
       success: true,
@@ -743,7 +712,6 @@ export const acceptApplication = async (
       });
     }
 
-    next(error);
   }
 };
 
@@ -909,106 +877,118 @@ export const withdrawApplication = async (
   }
 };
 
-export const removeProjectMember = async (
-  req,
-  res,
-  next
-) => {
+export const removeProjectMember = async (req, res, next) => {
   try {
     const ownerId = req.user.userId;
 
-    const {
-      projectId,
-      memberId,
-    } = req.params;
+    const { projectId, memberId } = req.params;
 
-    const project = await prisma.project.findUnique({
-      where: {
-        id: projectId,
-      },
-
-      select: {
-        id: true,
-        ownerId: true,
-        status: true,
-      },
-    });
-
-    if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: "Project not found",
-      });
-    }
-
-    if (project.ownerId !== ownerId) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Only the project owner can remove members",
-      });
-    }
-
-   const member = await prisma.projectMember.findUnique({
-  where: {
-    projectId_userId: {
-      projectId,
-      userId: memberId,
-    },
-  },
-});
-
-await prisma.projectApplication.delete({
-  where:{
-    applicantId:memberId
-  }
-})
-
-await prisma.projectMember.delete({
-  where: {
-    projectId_userId: {
-      projectId,
-      userId: memberId,
-    },
-  },
-});
-
-    if (!member) {
-      return res.status(404).json({
-        success: false,
-        message: "Project member not found",
-      });
-    }
-
-    if (member.projectId !== projectId) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid project member",
-      });
-    }
-
-    await prisma.projectMember.delete({
-      where: {
-        id: memberId,
-      },
-    });
-    if (project.status === "FULL") {
-      await prisma.project.update({
+    const result = await prisma.$transaction(async (tx) => {
+  
+      const project = await tx.project.findUnique({
         where: {
           id: projectId,
         },
 
-        data: {
-          status: "OPEN",
+        select: {
+          id: true,
+          ownerId: true,
+          status: true,
         },
       });
-    }
 
+      if (!project) {
+        const error = new Error("PROJECT_NOT_FOUND");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      if (project.ownerId !== ownerId) {
+        const error = new Error("NOT_PROJECT_OWNER");
+        error.statusCode = 403;
+        throw error;
+      }
+
+
+      const member = await tx.projectMember.findUnique({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId: memberId,
+          },
+        },
+      });
+
+      if (!member) {
+        const error = new Error("PROJECT_MEMBER_NOT_FOUND");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      await tx.projectMember.delete({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId: memberId,
+          },
+        },
+      });
+
+      const application = await tx.projectApplication.findFirst({
+        where: {
+          projectId,
+          applicantId: memberId,
+          status: "ACCEPTED",
+        },
+      });
+
+      if (application) {
+        await tx.projectApplication.delete({
+          where: {
+            id: application.id,
+          },
+        });
+      }
+
+      await tx.user.update({
+        where: {
+          id: memberId,
+        },
+
+        data: {
+          impact: {
+            decrement: 40,
+          },
+        },
+      });
+
+      if (project.status === "FULL") {
+        await tx.project.update({
+          where: {
+            id: projectId,
+          },
+
+          data: {
+            status: "OPEN",
+          },
+        });
+      }
+
+      return member;
+    });
     return res.status(200).json({
       success: true,
       message: "Member removed successfully",
+      data: result,
     });
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: getProjectErrorMessage(error.message),
+      });
+    }
+
     next(error);
   }
 };
@@ -1073,6 +1053,93 @@ export const leaveProject = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+
+export const updateProjectImage = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const userId = req.user.userId;
+
+    const project = await prisma.project.findUnique({
+      where: {
+        id: projectId,
+      },
+    });
+
+    console.log("project",project);
+    console.log("userId",userId);
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    if (project.ownerId !== userId) {
+      return res.status(403).json({
+        message:
+          "Only the project owner can change the project image",
+      });
+    }
+
+
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Project image is required",
+      });
+    }
+
+
+    const uploadResult =
+      await new Promise((resolve, reject) => {
+        const stream =
+          cloudinary.uploader.upload_stream(
+            {
+              folder: "techlink/projects",
+              resource_type: "image",
+            },
+            (error, result) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(result);
+              }
+            }
+          );
+
+        stream.end(req.file.buffer);
+      });
+      
+    const updatedProject =
+      await prisma.project.update({
+        where: {
+          id: projectId,
+        },
+        data: {
+          imageUrl: uploadResult.secure_url,
+        },
+      });
+
+    return res.status(200).json({
+      message:
+        "Project image updated successfully",
+
+      imageUrl: uploadResult.secure_url,
+
+      project: updatedProject,
+    });
+  } catch (error) {
+    console.error(
+      "updateProjectImage error:",
+      error
+    );
+
+    return res.status(500).json({
+      message:
+        "Failed to update project image",
+    });
   }
 };
 
