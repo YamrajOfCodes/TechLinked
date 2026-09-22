@@ -9,16 +9,44 @@ import {
 
 import {
   useProject,
+  useRemoveFromProject,
+  useWithdrawApplication,
 } from "../../../../src/hooks/Project/useProjects";
 import ProjectDetailSkeleton from "@/src/components/User/Projects/ProjectDetail/ProjectDetailSkeleton";
 import TeamSection from "@/src/components/User/Projects/ProjectDetail/TeamSection";
 import OwnerApplications from "@/src/components/User/Projects/ProjectDetail/OwnerApplications";
 import ProjectActionCard from "@/src/components/User/Projects/ProjectDetail/ProjectActionCard";
 import OwnerCard from "@/src/components/User/Projects/ProjectDetail/OwnerCard";
+import { useState } from "react";
+import ConfirmModal from "@/src/components/Models/ConfirmModal";
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+    const {
+    mutate: withdrawApplication,
+    isPending: isWithdrawing,
+  } = useWithdrawApplication();
+
+  const [withdrawApplation,setWithdrawApplication] = useState(false);
+  const [applicationId,setApplicationId] = useState("");
+    const [memberId,setMemeberId] = useState("");
+  const [confirmModal,setConfirmModal] = useState(false);
+  const {mutate:removeMember,isPending:isremove} = useRemoveFromProject();
+
+  const prewithdraw = (id:string)=>{
+      setWithdrawApplication(true);
+      setApplicationId(id);
+  }
+
+  const handleWithDraw = ()=>[
+    withdrawApplication(applicationId,{
+       onSuccess:()=>{
+        setWithdrawApplication(false);
+        setApplicationId("");
+       }
+    })
+  ]
 
   const projectId = params.projectId as string;
 
@@ -31,6 +59,31 @@ export default function ProjectDetailPage() {
   if (isLoading) {
     return <ProjectDetailSkeleton />;
   }
+
+
+
+  const handlePreRemoveMember = (id:string)=>{
+    console.log(id);
+    setMemeberId(id);
+    setConfirmModal(true);
+  }
+
+  const handlemmeber = ()=>{
+   
+    removeMember({
+    projectId,
+    memberId
+    },{
+      onSuccess:()=>{
+        setMemeberId("");
+        setConfirmModal(false);
+      }
+    }
+    )
+    
+  }
+
+
 
   if (isError || !project) {
     return (
@@ -174,7 +227,7 @@ export default function ProjectDetailPage() {
               </div>
             </div>
 
-            <TeamSection project={project} />
+            <TeamSection project={project} handlePreRemoveMember={handlePreRemoveMember} />
             
             {project.viewer.isOwner && (
               <OwnerApplications
@@ -185,12 +238,45 @@ export default function ProjectDetailPage() {
 
           {/* RIGHT */}
           <aside className="space-y-5">
-            <ProjectActionCard project={project} />
+            <ProjectActionCard project={project} isWithdrawing={isWithdrawing} prewithdraw={prewithdraw}/>
 
             <OwnerCard project={project} />
           </aside>
         </div>
       </div>
+      {
+        withdrawApplation && (
+          <ConfirmModal
+           title="WithDraw Application"
+           description="are you sure about to withdrawing the application"
+           isOpen={withdrawApplation}
+           onClose={()=>{setWithdrawApplication(false)}}
+           cancelLabel="Cancel Withdraw"
+           loadingLabel="Withdrawing..."
+           confirmLabel="WithDraw"
+           variant="default"
+           onConfirm={handleWithDraw}
+           isLoading={isWithdrawing}
+          />
+        )
+      }
+
+      {
+        confirmModal && (
+             <ConfirmModal
+           title="Remove Member"
+           description="are you sure about removing these member?"
+           isOpen={confirmModal}
+           onClose={()=>{setConfirmModal(false)}}
+           cancelLabel="Cancel"
+           loadingLabel="Removing..."
+           confirmLabel="Remove"
+           variant="danger"
+           onConfirm={handlemmeber}
+           isLoading={isremove}
+          />
+        )
+      }
     </main>
   );
 }

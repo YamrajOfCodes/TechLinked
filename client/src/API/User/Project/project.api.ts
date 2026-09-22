@@ -161,3 +161,13 @@ export const withdrawApplication = async (
 
   return res.data.data;
 };
+
+export const removeFromProject = async (
+  projectId: string,
+  memberId:string
+) => {
+  const res = await api.delete(
+    `/projects/${projectId}/members/${memberId}`
+  );
+  return res.data.data;
+};

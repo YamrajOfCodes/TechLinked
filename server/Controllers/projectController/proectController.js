@@ -882,16 +882,22 @@ export const withdrawApplication = async (
       });
     }
 
-    const updatedApplication =
-      await prisma.projectApplication.update({
-        where: {
-          id: application.id,
-        },
+    // const updatedApplication =
+    //   await prisma.projectApplication.update({
+    //     where: {
+    //       id: application.id,
+    //     },
 
-        data: {
-          status: "WITHDRAWN",
-        },
-      });
+    //     data: {
+    //       status: "WITHDRAWN",
+    //     },
+    //   });
+
+   const updatedApplication =  await prisma.projectApplication.delete({
+      where: {
+    id: application.id,
+     },
+     });
 
     return res.status(200).json({
       success: true,
@@ -943,12 +949,29 @@ export const removeProjectMember = async (
       });
     }
 
-    const member =
-      await prisma.projectMember.findUnique({
-        where: {
-          id: memberId,
-        },
-      });
+   const member = await prisma.projectMember.findUnique({
+  where: {
+    projectId_userId: {
+      projectId,
+      userId: memberId,
+    },
+  },
+});
+
+await prisma.projectApplication.delete({
+  where:{
+    applicantId:memberId
+  }
+})
+
+await prisma.projectMember.delete({
+  where: {
+    projectId_userId: {
+      projectId,
+      userId: memberId,
+    },
+  },
+});
 
     if (!member) {
       return res.status(404).json({

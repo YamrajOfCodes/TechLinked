@@ -1,21 +1,21 @@
-import { useApplyToProject, useWithdrawApplication } from "@/src/hooks/Project/useProjects";
+import { useApplyToProject } from "@/src/hooks/Project/useProjects";
 import { Check, Clock3, Users } from "lucide-react";
 import { useState } from "react";
 
 function ProjectActionCard({
   project,
+  isWithdrawing,
+  prewithdraw
 }: {
   project: any;
+  isWithdrawing:boolean;
+  prewithdraw:(id:string)=>void
 }) {
   const [message, setMessage] = useState("");
   const [showApplyBox, setShowApplyBox] = useState(false);
 
   const applyMutation = useApplyToProject();
 
-  const {
-    mutate: withdrawApplication,
-    isPending: isWithdrawing,
-  } = useWithdrawApplication();
 
   const handleApply = () => {
     applyMutation.mutate({
@@ -68,15 +68,7 @@ function ProjectActionCard({
     "PENDING"
   ) {
     const handleWithdraw = () => {
-      const confirmed = window.confirm(
-        "Are you sure you want to withdraw your application?"
-      );
-
-      if (!confirmed) {
-        return;
-      }
-
-      withdrawApplication(project.id);
+      prewithdraw(project.id);
     };
 
     return (
@@ -97,22 +89,7 @@ function ProjectActionCard({
           type="button"
           onClick={handleWithdraw}
           disabled={isWithdrawing}
-          className="
-            mt-5
-            w-full
-            rounded-xl
-            border
-            border-red-200
-            px-4
-            py-2.5
-            text-sm
-            font-semibold
-            text-red-600
-            transition
-            hover:bg-red-50
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-          "
+          className="mt-5 w-full rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
         >
           {isWithdrawing
             ? "Withdrawing..."

@@ -11,7 +11,8 @@ import {
   getProjectApplications,
   acceptProjectApplication,
   rejectProjectApplication,
-  withdrawApplication
+  withdrawApplication,
+  removeFromProject
 } from "../../API/User/Project/project.api";
 import toast from "react-hot-toast";
 
@@ -60,6 +61,8 @@ export const useApplyToProject = () => {
       queryClient.invalidateQueries({
         queryKey: projectKeys.lists(),
       });
+
+      toast.success("application has been sent")
     },
 
     onError: (error: any) => {
@@ -120,6 +123,8 @@ export const useRejectApplication = () => {
           variables.projectId
         ),
       });
+
+      toast.success("application rejected");
     },
   });
 };
@@ -146,6 +151,49 @@ export const useWithdrawApplication = () => {
       queryClient.invalidateQueries({
         queryKey: projectKeys.lists(),
       });
+
+      toast.success("application withdrawn")
+    },
+  });
+};
+
+
+
+export const useRemoveFromProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      memberId,
+    }: {
+      projectId: string;
+      memberId: string;
+    }) => removeFromProject(projectId, memberId),
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(variables.projectId),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.applications(
+          variables.projectId
+        ),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
+
+      toast.success("Member removed from project");
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to remove member"
+      );
     },
   });
 };
