@@ -3,8 +3,10 @@ import TeamMember from "./TeamMember";
 
 const TeamSection = ({
   project,
+  handlePreRemoveMember
 }: {
   project: any;
+  handlePreRemoveMember:(id:string)=>void
 })=> {
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-6">
@@ -46,6 +48,8 @@ const TeamSection = ({
         <TeamMember
           user={project.owner}
           label="Project owner"
+          owner={false}
+          handlePreRemoveMember={handlePreRemoveMember}
         />
 
         {project.members.map(
@@ -54,6 +58,8 @@ const TeamSection = ({
               key={member.id}
               user={member.user}
               label="Member"
+              owner={project.viewer?.isOwner}
+              handlePreRemoveMember={handlePreRemoveMember}
             />
           )
         )}

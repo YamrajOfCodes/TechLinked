@@ -11,7 +11,11 @@ import {
   getProjectApplications,
   acceptProjectApplication,
   rejectProjectApplication,
-  withdrawApplication
+  withdrawApplication,
+  removeFromProject,
+  createProject,
+  updateProjectImage,
+  completeProject
 } from "../../API/User/Project/project.api";
 import toast from "react-hot-toast";
 
@@ -28,6 +32,34 @@ export const projectKeys = {
     [...projectKeys.all, "applications", id] as const,
 };
 
+
+export const useCreateProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createProject,
+
+    onSuccess: () => {
+      // Refresh project list
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["me"],
+      });
+
+      toast.success("Project created successfully");
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to create project"
+      );
+    },
+  });
+};
 
 export const useProjects = () => {
   return useQuery({
@@ -60,6 +92,8 @@ export const useApplyToProject = () => {
       queryClient.invalidateQueries({
         queryKey: projectKeys.lists(),
       });
+
+      toast.success("application has been sent")
     },
 
     onError: (error: any) => {
@@ -97,6 +131,8 @@ export const useAcceptApplication = () => {
           variables.projectId
         ),
       });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+
 
       queryClient.invalidateQueries({
         queryKey: projectKeys.applications(
@@ -120,6 +156,8 @@ export const useRejectApplication = () => {
           variables.projectId
         ),
       });
+
+      toast.success("application rejected");
     },
   });
 };
@@ -143,6 +181,93 @@ export const useWithdrawApplication = () => {
       });
 
       // Refresh project list
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
+
+      toast.success("application withdrawn")
+    },
+  });
+};
+
+
+
+export const useRemoveFromProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      projectId,
+      memberId,
+    }: {
+      projectId: string;
+      memberId: string;
+    }) => removeFromProject(projectId, memberId),
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(variables.projectId),
+      });
+
+    queryClient.invalidateQueries({ queryKey: ["me"] });
+
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.applications(
+          variables.projectId
+        ),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
+
+      toast.success("Member removed from project");
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to remove member"
+      );
+    },
+  });
+};
+
+
+export const useUpdateProjectImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateProjectImage,
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(
+          variables.projectId
+        ),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.lists(),
+      });
+    },
+  });
+};
+
+
+export const useCompleteProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: completeProject,
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.detail(
+          variables.projectId
+        ),
+      });
+
       queryClient.invalidateQueries({
         queryKey: projectKeys.lists(),
       });

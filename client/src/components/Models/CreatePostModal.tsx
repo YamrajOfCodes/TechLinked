@@ -186,7 +186,7 @@ export default function CreatePostModal({
                 setError("");
               }
             }}
-            placeholder="Write a caption… (optional)"
+            placeholder="Write a caption…"
             rows={3}
             maxLength={500}
             disabled={isPending}

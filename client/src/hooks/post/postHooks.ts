@@ -51,15 +51,16 @@ export const useGetPost = (postId: string) => {
 
 export const useCreatePost = () => {
   const queryClient = useQueryClient();
-
+ 
   return useMutation({
     mutationFn: createPost,
-
+ 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: postKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       toast.success("Post created!");
     },
-
+ 
     onError: (error: AxiosError<ErrorResponse>) => {
       const message = error.response?.data?.message || "Failed to create post";
       toast.error(message);
@@ -87,15 +88,16 @@ export const useUpdatePost = () => {
  
 export const useDeletePost = () => {
   const queryClient = useQueryClient();
-
+ 
   return useMutation({
     mutationFn: deletePost,
-
+ 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: postKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["me"] });
       toast.success("Post deleted");
     },
-
+ 
     onError: (error: AxiosError<ErrorResponse>) => {
       const message = error.response?.data?.message || "Failed to delete post";
       toast.error(message);
@@ -122,9 +124,6 @@ export const useHandleLike = () => {
     },
   });
 };
-
-
-
 
 
 export const useAddComment = () => {

@@ -82,14 +82,14 @@ export default function ConfirmModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="rounded-full bg-[var(--app-surface-2)] px-4 py-2 text-sm font-medium text-[var(--app-text-primary)] transition-colors hover:bg-[var(--app-surface-hover)] disabled:opacity-50"
+            className="rounded-full bg-[var(--app-surface-2)] px-4 py-2 cursor-pointer text-sm font-medium text-[var(--app-text-primary)] transition-colors hover:bg-[var(--app-surface-hover)] disabled:opacity-50"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-60 ${
+            className={`inline-flex items-center gap-2 cursor-pointer rounded-full px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-60 ${
               isDanger ? "bg-[var(--app-danger)] hover:brightness-110" : "bg-[var(--app-primary)] hover:brightness-110"
             }`}
           >

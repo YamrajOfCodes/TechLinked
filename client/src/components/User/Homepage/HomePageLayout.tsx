@@ -210,7 +210,7 @@ const onShare = async (postId: string) => {
                 <div className="px-6 pb-6 pt-14">
                   <div className="flex items-center gap-2">
                     <h1 className="text-[20px] font-semibold tracking-[-0.02em]">
-                      {user.name}
+                    {`${user?.FirstName ?? ""} ${user?.LastName ?? ""}`.trim() || "Unknown User"}
                     </h1>
 
                     <CircleCheck
@@ -220,31 +220,31 @@ const onShare = async (postId: string) => {
                   </div>
 
                   <p className="mt-1 text-sm text-text-muted">
-                    {user.username}
+                    @{user?.FirstName}
                   </p>
 
                   <p className="mt-4 text-sm leading-6 text-text-secondary">
-                    {user.tagline}
+                    {/* {user.tagline} */}
                   </p>
 
                   <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-xl border border-border">
                     <div className="px-3 py-4 text-center">
                       <p className="text-lg font-semibold">
-                        {user.connections}
+                       {user?.posts?.length}
                       </p>
 
                       <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-text-subtle">
-                        Connections
+                        Posts
                       </p>
                     </div>
 
                     <div className="border-l border-border px-3 py-4 text-center">
                       <p className="text-lg font-semibold">
-                        {user.endorsements}
+                        {user?.impact}
                       </p>
 
                       <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-text-subtle">
-                        Endorsements
+                        Impact
                       </p>
                     </div>
                   </div>

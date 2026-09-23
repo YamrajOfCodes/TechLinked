@@ -4,10 +4,15 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Users } from "lucide-react";
 
-import { createProject } from "../../../src/API/User/Project/project.api";
+import { useCreateProject } from "@/src/hooks/Project/useProjects";
 
 
 export default function CreateProjectPage() {
+
+  const {
+  mutateAsync: createProject,
+  isPending: loading,
+} = useCreateProject();
 
   const router = useRouter();
 
@@ -24,62 +29,44 @@ export default function CreateProjectPage() {
   const [projectUrl, setProjectUrl] =
     useState("");
 
-  const [loading, setLoading] =
-    useState(false);
-
   const [error, setError] =
     useState("");
 
 
-  const handleSubmit = async (
-    e: FormEvent
-  ) => {
+  const handleSubmit = async (e: FormEvent) => {
+  e.preventDefault();
 
-    e.preventDefault();
+  setError("");
 
-    setError("");
+  if (!title.trim()) {
+    setError("Project title is required");
+    return;
+  }
 
-    if (!title.trim()) {
-      setError("Project title is required");
-      return;
-    }
+  try {
+    const project = await createProject({
+      title: title.trim(),
+      description: description.trim(),
+      requiredMembers,
+      githubUrl: githubUrl.trim() || undefined,
+      projectUrl: projectUrl.trim() || undefined,
+    });
 
-    try {
-
-      setLoading(true);
-
-      const project = await createProject({
-        title: title.trim(),
-        description: description.trim(),
-        requiredMembers,
-        githubUrl: githubUrl.trim() || undefined,
-        projectUrl: projectUrl.trim() || undefined,
-      });
-
-      router.push(
-        `/projects/${project.id}`
-      );
-
-    } catch (err: any) {
-
-      setError(
-        err?.response?.data?.message ||
-          "Failed to create project"
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-  };
+    router.push(`/projects/${project.id}`);
+  } catch (err: any) {
+    setError(
+      err?.response?.data?.message ||
+        "Failed to create project"
+    );
+  }
+};
 
 
   return (
 
-    <main onClick={(e)=>e.stopPropagation()}>
+    <main>
 
-      <div className="mx-auto max-w-2xl px-4 py-8 md:px-6">
+      <div className="mx-auto max-w-2xl px-4 py-8 md:px-6" onClick={(e)=>{e.stopPropagation()}}>
 
         {/* <button
           onClick={() => router.back()}
@@ -295,28 +282,14 @@ export default function CreateProjectPage() {
 
             {/* SUBMIT */}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="
-                w-full
-                rounded-xl
-                bg-[#397A68]
-                px-4
-                py-3
-                text-sm
-                font-semibold
-                text-white
-                transition
-                hover:bg-[#2f6657]
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-              "
-            >
-              {loading
-                ? "Creating..."
-                : "Create Project"}
-            </button>
+          <button
+  type="submit"
+  disabled={loading}
+  className="w-full rounded-xl bg-[#397A68] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#2f6657] disabled:cursor-not-allowed disabled:opacity-50
+  "
+>
+  {loading ? "Creating..." : "Create Project"}
+</button>
 
           </form>
 
