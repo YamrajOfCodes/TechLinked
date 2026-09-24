@@ -23,6 +23,8 @@ model User {
   FirstName String
   LastName  String
 
+  college String? @default("Not specified")
+
   bio          String?
   dateOfBirth  DateTime?
   education    String?
