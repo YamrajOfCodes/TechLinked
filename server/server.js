@@ -14,6 +14,7 @@ import postRoutes from "./Routes/postRoutes/post.routes.js";
 import commentRoutes from "./Routes/postRoutes/comment.routes.js";
 import likeRoutes from "./Routes/postRoutes/like.routes.js";
 import projectRoutes from "./Routes/projectRoutes/project.route.js"
+import spaceRoutes from "./Routes/spaceRoutes/space.route.js"
 
 import { startServer } from "./startServer/startServer.js";
 
@@ -56,6 +57,8 @@ app.use("/api", commentRoutes);
 app.use("/api", likeRoutes);
 
 app.use("/api/projects",projectRoutes);
+
+app.use("/api/space",spaceRoutes);
 
 
 app.get("/", (req, res) => {

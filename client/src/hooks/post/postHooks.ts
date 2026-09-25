@@ -14,6 +14,7 @@ import {
   getComments,
   postComment,
 } from "@/src/API/User/Post/postAPI";
+import { leaderboardKeys } from "../space/useSpacehooks";
 
 interface ErrorResponse {
   message?: string;
@@ -58,6 +59,10 @@ export const useCreatePost = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: postKeys.all });
       queryClient.invalidateQueries({ queryKey: ["me"] });
+       queryClient.invalidateQueries({
+        queryKey: leaderboardKeys.all,
+      });
+
       toast.success("Post created!");
     },
  
